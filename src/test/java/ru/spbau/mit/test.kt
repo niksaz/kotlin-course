@@ -6,26 +6,34 @@ import org.junit.Test
 class TestSource {
     @Test
     fun exampleTest1() {
-        val n = 7
-        val k = 2
-        val isUniversity = booleanArrayOf(true, true, false, false, true, true, false)
-        val graph = initGraph(n)
+        val vertexNumber = 7
+        val universityPairs = 2
+        val graph = List(vertexNumber, { Vertex() })
+        graph[0].hasUniversity = true
+        graph[1].hasUniversity = true
+        graph[4].hasUniversity = true
+        graph[5].hasUniversity = true
         addEdge(graph, 0, 2)
         addEdge(graph, 2, 1)
         addEdge(graph, 3, 4)
         addEdge(graph, 2, 6)
         addEdge(graph, 3, 2)
         addEdge(graph, 3, 5)
-        val solver = Solver(k, isUniversity, graph)
+        val solver = Solver(universityPairs, graph)
         assertEquals(6, solver.solve())
     }
 
     @Test
     fun exampleTest2() {
-        val n = 9
-        val k = 3
-        val isUniversity = booleanArrayOf(true, true, true, false, true, true, false, false, true)
-        val graph = initGraph(n)
+        val vertexNumber = 9
+        val universityPairs = 3
+        val graph = List(vertexNumber, { Vertex() })
+        graph[0].hasUniversity = true
+        graph[1].hasUniversity = true
+        graph[2].hasUniversity = true
+        graph[4].hasUniversity = true
+        graph[5].hasUniversity = true
+        graph[8].hasUniversity = true
         addEdge(graph, 7, 8)
         addEdge(graph, 2, 1)
         addEdge(graph, 1, 6)
@@ -34,20 +42,12 @@ class TestSource {
         addEdge(graph, 3, 4)
         addEdge(graph, 1, 0)
         addEdge(graph, 1, 7)
-        val solver = Solver(k, isUniversity, graph)
+        val solver = Solver(universityPairs, graph)
         assertEquals(9, solver.solve())
     }
 
-    private fun initGraph(size: Int): List<Vertex> {
-        val graph = mutableListOf<Vertex>()
-        for (i in 0 until size) {
-            graph.add(Vertex())
-        }
-        return graph.toList()
-    }
-
     private fun addEdge(graph: List<Vertex>, edgeA: Int, edgeB: Int) {
-        graph[edgeA].edges.add(edgeB)
-        graph[edgeB].edges.add(edgeA)
+        graph[edgeA].edges.add(graph[edgeB])
+        graph[edgeB].edges.add(graph[edgeA])
     }
 }

@@ -3,54 +3,51 @@ package ru.spbau.mit
 import java.io.*
 import java.util.*
 
-class Solver(
-    private val k: Int,
-    private val universities: BooleanArray,
-    private val graph: List<Vertex>) {
-
-    private val subtreeUniversityCount = IntArray(universities.size)
-    private val maxSubtreeUniversityCount = Array(universities.size, { Pair(0, 0) } )
-
+class Solver(private val universityPairs: Int, private val graph: List<Vertex>) {
     fun solve(): Long {
-        computeSubtreeUniversityCount(0, 0)
-        val root = findOptimalVertex(0)
+        computeSubtreeUniversityCount(graph[0])
+        val root = findOptimalVertex(graph[0])
         return sumFromRoot(root, root, 0)
     }
 
-    private fun computeSubtreeUniversityCount(vertex: Int, parent: Int): Int {
-        if (universities[vertex]) {
-            subtreeUniversityCount[vertex]++
+    private fun computeSubtreeUniversityCount(vertex: Vertex, parent: Vertex = vertex) {
+        if (vertex.hasUniversity) {
+            vertex.subtreeUniversityCount++
         }
-        for (toVertex in graph[vertex].edges) {
-            if (toVertex != parent) {
-                val childCount = computeSubtreeUniversityCount(toVertex, vertex)
-                subtreeUniversityCount[vertex] += childCount
-                if (childCount > maxSubtreeUniversityCount[vertex].first) {
-                    maxSubtreeUniversityCount[vertex] = Pair(childCount, toVertex)
+        for (toVertex in vertex.edges) {
+            if (toVertex !== parent) {
+                computeSubtreeUniversityCount(toVertex, vertex)
+                val childCount = toVertex.subtreeUniversityCount
+                vertex.subtreeUniversityCount += childCount
+                if (childCount > vertex.maxSubtreeUniversityCount?.first ?: 0) {
+                    vertex.maxSubtreeUniversityCount = Pair(childCount, toVertex)
                 }
             }
         }
-        return subtreeUniversityCount[vertex]
     }
 
-    private fun findOptimalVertex(vertex: Int): Int {
-        return if (maxSubtreeUniversityCount[vertex].first > k) {
-            findOptimalVertex(maxSubtreeUniversityCount[vertex].second)
+    private fun findOptimalVertex(vertex: Vertex): Vertex {
+        return if (vertex.maxSubtreeUniversityCount!!.first > universityPairs) {
+            findOptimalVertex(vertex.maxSubtreeUniversityCount!!.second)
         } else {
             vertex
         }
     }
 
-    private fun sumFromRoot(vertex: Int, parent: Int, distanceToRoot: Int): Long {
-        return (if (universities[vertex]) distanceToRoot.toLong() else 0L) +
-            graph[vertex].edges
-            .filter { it != parent }
+    private fun sumFromRoot(vertex: Vertex, parent: Vertex, distanceToRoot: Int): Long {
+        return (if (vertex.hasUniversity) distanceToRoot.toLong() else 0L) +
+            vertex.edges
+            .filter { it !== parent }
             .map { sumFromRoot(it, vertex, distanceToRoot + 1) }
             .sum()
     }
 }
 
-data class Vertex(val edges: MutableList<Int> = mutableListOf())
+data class Vertex(
+    val edges: MutableList<Vertex> = mutableListOf(),
+    var hasUniversity: Boolean = false,
+    var subtreeUniversityCount: Int = 0,
+    var maxSubtreeUniversityCount: Pair<Int, Vertex>? = null)
 
 class InputReader(stream: InputStream) {
     private val reader: BufferedReader = BufferedReader(InputStreamReader(stream), 32768)
@@ -75,24 +72,20 @@ class InputReader(stream: InputStream) {
 fun main(args: Array<String>) {
     val reader = InputReader(System.`in`)
 
-    val n = reader.nextInt()
-    val graph = mutableListOf<Vertex>()
-    for (i in 0 until n) {
-        graph.add(Vertex())
-    }
-    val k = reader.nextInt()
-    val isUniversity = BooleanArray(n)
-    for (i in 0 until 2 * k) {
+    val vertexNumber = reader.nextInt()
+    val graph = List(vertexNumber, { Vertex() })
+    val universityPairs = reader.nextInt()
+    for (i in 0 until 2 * universityPairs) {
         val universityIndex = reader.nextInt() - 1
-        isUniversity[universityIndex] = true
+        graph[universityIndex].hasUniversity = true
     }
-    for (i in 0 until n - 1) {
+    for (i in 0 until vertexNumber - 1) {
         val edgeA = reader.nextInt() - 1
         val edgeB = reader.nextInt() - 1
-        graph[edgeA].edges.add(edgeB)
-        graph[edgeB].edges.add(edgeA)
+        graph[edgeA].edges.add(graph[edgeB])
+        graph[edgeB].edges.add(graph[edgeA])
     }
 
-    val solver = Solver(k, isUniversity, graph.toList())
+    val solver = Solver(universityPairs, graph)
     println(solver.solve())
 }
