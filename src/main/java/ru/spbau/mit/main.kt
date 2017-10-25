@@ -55,18 +55,12 @@ class InputReader(stream: InputStream) {
 
     private fun next(): String {
         while (tokenizer == null || !tokenizer!!.hasMoreTokens()) {
-            try {
-                tokenizer = StringTokenizer(reader.readLine())
-            } catch (e: IOException) {
-                throw RuntimeException(e)
-            }
+            tokenizer = StringTokenizer(reader.readLine())
         }
         return tokenizer!!.nextToken()
     }
 
-    fun nextInt(): Int {
-        return Integer.parseInt(next())
-    }
+    fun nextInt() = Integer.parseInt(next())
 }
 
 fun main(args: Array<String>) {
