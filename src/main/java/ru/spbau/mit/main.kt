@@ -1,14 +1,20 @@
 package ru.spbau.mit
 
-fun getGreeting(): String {
-    val words = mutableListOf<String>()
-    words.add("Hello,")
-    
-    words.add("world!")
-
-    return words.joinToString(separator = " ")
-}
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
+import ru.spbau.mit.interpreter.FunPrinterVisitor
+import ru.spbau.mit.parser.FunLexer
+import ru.spbau.mit.parser.FunParser
 
 fun main(args: Array<String>) {
-    println(getGreeting())
+    if (args.isEmpty()) {
+        println("Pass the path to a Fun source file")
+        return
+    }
+    val funLexer = FunLexer(CharStreams.fromFileName(args[0]))
+    val tokens = CommonTokenStream(funLexer)
+    val parser = FunParser(tokens)
+    val file = parser.file()
+    val funPrinter = FunPrinterVisitor()
+    funPrinter.visit(file)
 }
