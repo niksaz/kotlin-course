@@ -4,31 +4,31 @@ package ru.spbau.mit.ast
  * An intermediate AST representation which is built from Antlr's
  * [org.antlr.v4.runtime.tree.ParseTree].
  */
-data class FunAst(val rootNode: FunAstNode) {
-    interface FunAstNode
+data class FunAst(val rootNode: Node) {
+    interface Node
 
     data class File(
         val block: Block
-    ) : FunAstNode
+    ) : Node
 
     data class Block(
         val statements: List<Statement>
-    ) : FunAstNode
+    ) : Node
 
     data class BlockWithBraces(
         val block: Block
-    ) : FunAstNode
+    ) : Node
 
-    interface Statement : FunAstNode
+    interface Statement : Node
 
     data class Function(
-        val name: Identifier,
+        val identifier: Identifier,
         val paramNames: ParameterNames,
         val body: BlockWithBraces
     ) : Statement
 
     data class Variable(
-        val name: Identifier,
+        val identifier: Identifier,
         val expression: Expression
     ) : Statement
 
@@ -63,7 +63,7 @@ data class FunAst(val rootNode: FunAstNode) {
 
     data class Arguments(
         val expressions: List<Expression>
-    ) : FunAstNode
+    ) : Node
 
     interface Expression : Statement
 
@@ -81,19 +81,25 @@ data class FunAst(val rootNode: FunAstNode) {
         val literal: String
     ) : Expression
 
-    enum class Operator {
-        MULTIPLY,
-        DIVIDE,
-        MODULUS,
-        PLUS,
-        MINUS,
-        GT,
-        LT,
-        GTE,
-        LTE,
-        EQ,
-        NQ,
-        LOR,
-        LAND
+    enum class Operator(private val symbol: String) {
+        MULTIPLY("*"),
+        DIVIDE("/"),
+        MODULUS("%"),
+        PLUS("+"),
+        MINUS("-"),
+        GT(">"),
+        LT("<"),
+        GTE(">="),
+        LTE("<="),
+        EQ("=="),
+        NQ("!="),
+        LOR("||"),
+        LAND("&&");
+
+        companion object {
+            fun getForSymbol(symbol: String): Operator? {
+                return values().firstOrNull { it.symbol == symbol }
+            }
+        }
     }
 }
