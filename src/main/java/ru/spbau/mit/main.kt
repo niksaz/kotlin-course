@@ -14,6 +14,6 @@ fun main(args: Array<String>) {
     val funLexer = FunLexer(CharStreams.fromFileName(args[0]))
     val tokens = CommonTokenStream(funLexer)
     val parser = FunParser(tokens)
-    val funAst = FunAstBuilder().buildAstFromFileContext(parser.file())
+    val funAst = FunAstBuilder().buildAstFromContext(parser.file())
     println(funAst)
 }

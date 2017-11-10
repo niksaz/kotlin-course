@@ -1,12 +1,13 @@
 package ru.spbau.mit.ast
 
+import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ParseTree
 import ru.spbau.mit.parser.FunBaseVisitor
 import ru.spbau.mit.parser.FunParser
 
 class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
-    fun buildAstFromFileContext(file: FunParser.FileContext): FunAst {
-        val rootNode = visit(file)
+    fun buildAstFromContext(ctx: ParserRuleContext): FunAst {
+        val rootNode = visit(ctx)
         return FunAst(rootNode)
     }
 
@@ -20,7 +21,7 @@ class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
     }
 
     override fun visitBlockWithBraces(ctx: FunParser.BlockWithBracesContext): FunAst.Node {
-        return FunAst.BlockWithBraces(visit(ctx.block()) as FunAst.Block)
+        return visit(ctx.block())
     }
 
     override fun visitStatement(ctx: FunParser.StatementContext): FunAst.Node {
@@ -40,7 +41,7 @@ class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
     override fun visitFunction(ctx: FunParser.FunctionContext): FunAst.Node {
         val identifier = FunAst.Identifier(ctx.IDENTIFIER().text)
         val paramNames = visit(ctx.parameterNames()) as FunAst.ParameterNames
-        val body = visit(ctx.blockWithBraces()) as FunAst.BlockWithBraces
+        val body = visit(ctx.blockWithBraces()) as FunAst.Block
         return FunAst.Function(identifier, paramNames, body)
     }
 
@@ -57,15 +58,15 @@ class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
 
     override fun visitWhileBlock(ctx: FunParser.WhileBlockContext): FunAst.Node {
         val condition = visit(ctx.expression()) as FunAst.Expression
-        val body = visit(ctx.blockWithBraces()) as FunAst.BlockWithBraces
+        val body = visit(ctx.blockWithBraces()) as FunAst.Block
         return FunAst.WhileBlock(condition, body)
     }
 
     override fun visitIfStatement(ctx: FunParser.IfStatementContext): FunAst.Node {
         val condition = visit(ctx.expression()) as FunAst.Expression
         val blocks = ctx.blockWithBraces().map { visit(it) }
-        val body = blocks[0] as FunAst.BlockWithBraces
-        val elseBody = blocks.getOrNull(1) as FunAst.BlockWithBraces?
+        val body = blocks[0] as FunAst.Block
+        val elseBody = blocks.getOrNull(1) as FunAst.Block?
         return FunAst.IfStatement(condition, body, elseBody)
     }
 
@@ -87,7 +88,7 @@ class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
     }
 
     override fun visitArguments(ctx: FunParser.ArgumentsContext): FunAst.Node {
-        val expressions = ctx.expression().map { FunAst.Identifier(it.text) }
+        val expressions = ctx.expression().map { visit(it) as FunAst.Expression }
         return FunAst.Arguments(expressions)
     }
 

@@ -15,16 +15,12 @@ data class FunAst(val rootNode: Node) {
         val statements: List<Statement>
     ) : Node
 
-    data class BlockWithBraces(
-        val block: Block
-    ) : Node
-
     interface Statement : Node
 
     data class Function(
         val identifier: Identifier,
         val paramNames: ParameterNames,
-        val body: BlockWithBraces
+        val body: Block
     ) : Statement
 
     data class Variable(
@@ -38,13 +34,13 @@ data class FunAst(val rootNode: Node) {
 
     data class WhileBlock(
         val condition: Expression,
-        val body: BlockWithBraces
+        val body: Block
     ) : Statement
 
     data class IfStatement(
         val condition: Expression,
-        val body: BlockWithBraces,
-        val elseBody: BlockWithBraces?
+        val body: Block,
+        val elseBody: Block?
     ) : Statement
 
     data class Assignment(

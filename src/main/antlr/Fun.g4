@@ -60,8 +60,8 @@ arguments
     ;
 
 expression
-    : atomicExpression
-    | binaryExpression
+    : binaryExpression
+    | atomicExpression
     ;
 
 binaryExpression
