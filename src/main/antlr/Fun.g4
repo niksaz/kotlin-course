@@ -60,20 +60,20 @@ arguments
     ;
 
 expression
-    : atomExpression
+    : atomicExpression
     | binaryExpression
     ;
 
 binaryExpression
-    : atomExpression op = (MULTIPLY | DIVIDE | MODULUS) expression
-    | atomExpression op = (PLUS | MINUS) expression
-    | atomExpression op = (GT | LT | GTE | LTE) expression
-    | atomExpression op = (EQ | NQ) expression
-    | atomExpression op = LAND expression
-    | atomExpression op = LOR expression
+    : atomicExpression op = (MULTIPLY | DIVIDE | MODULUS) expression
+    | atomicExpression op = (PLUS | MINUS) expression
+    | atomicExpression op = (GT | LT | GTE | LTE) expression
+    | atomicExpression op = (EQ | NQ) expression
+    | atomicExpression op = LAND expression
+    | atomicExpression op = LOR expression
     ;
 
-atomExpression
+atomicExpression
     : functionCall
     | IDENTIFIER
     | NUMBER

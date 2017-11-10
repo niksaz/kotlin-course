@@ -2,7 +2,6 @@ package ru.spbau.mit
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import ru.spbau.mit.interpreter.FunPrinterVisitor
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 
@@ -15,6 +14,4 @@ fun main(args: Array<String>) {
     val tokens = CommonTokenStream(funLexer)
     val parser = FunParser(tokens)
     val file = parser.file()
-    val funPrinter = FunPrinterVisitor()
-    funPrinter.visit(file)
 }

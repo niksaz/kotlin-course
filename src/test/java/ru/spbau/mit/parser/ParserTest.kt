@@ -1,10 +1,11 @@
-package ru.spbau.mit
+package ru.spbau.mit.parser
+
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class TestSource {
+class ParserTest {
     @Test
     fun testGreeting() {
-        assertEquals("Hello, world!", getGreeting())
+
     }
 }
