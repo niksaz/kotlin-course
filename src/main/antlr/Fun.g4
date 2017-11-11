@@ -24,7 +24,7 @@ statement
     ;
 
 function
-    : 'fun' IDENTIFIER '(' (parameterNames)? ')' blockWithBraces
+    : 'fun' IDENTIFIER '(' parameterNames ')' blockWithBraces
     ;
 
 variable
@@ -32,7 +32,7 @@ variable
     ;
 
 parameterNames
-    : IDENTIFIER (',' IDENTIFIER)*
+    : (IDENTIFIER (',' IDENTIFIER)*)?
     ;
 
 whileBlock
@@ -52,11 +52,11 @@ returnStatement
     ;
 
 functionCall
-    : IDENTIFIER '(' (arguments)? ')'
+    : IDENTIFIER '(' arguments ')'
     ;
 
 arguments
-    : expression (',' expression)*
+    : (expression (',' expression)*)?
     ;
 
 expression
