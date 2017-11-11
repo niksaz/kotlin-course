@@ -110,7 +110,7 @@ class FunInterpreter(
         if (identifier == PRINTLN_IDENTIFIER) {
             val argsString = args.joinToString(" ") { it.toString() }
             outputStream.println(argsString)
-            return UNIT_INTERPRETATION
+            return InterpretationResult(DEFAULT_RESULT, false)
         }
         throw FunInterpretationException("Unknown built-in function " + identifier.name + ".")
     }

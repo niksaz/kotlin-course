@@ -24,7 +24,7 @@ class FunContext(
         val scopeFunctions = scope.functions
         if (scopeFunctions.contains(function.identifier)) {
             throw FunInterpretationException(
-                function.identifier.name + " function is redefined in the same scope.")
+                "Function \"" + function.identifier.name + "\" is redefined in the same scope.")
         }
         scopeFunctions.put(function.identifier, function)
     }
@@ -54,7 +54,7 @@ class FunContext(
         val scopeVariables = scope.variables
         if (scopeVariables.contains(variableIdentifier)) {
             throw FunInterpretationException(
-                variableIdentifier.name + " variable is redefined in the same scope.")
+                "Variable \"" + variableIdentifier.name + "\" is redefined in the same scope.")
         }
         scopeVariables.put(variableIdentifier, value)
     }

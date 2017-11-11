@@ -1,6 +1,5 @@
 grammar Fun;
 
-
 file
     : block
     ;
