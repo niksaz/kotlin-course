@@ -8,7 +8,7 @@ import java.io.PrintStream
 
 /** A visitor for interpreting the [FunAst] nodes. */
 class FunInterpreter(
-    private val outputStream: PrintStream = System.out,
+    private val printStream: PrintStream,
     private val context: FunContext = FunContext(setOf(PRINTLN_IDENTIFIER))
 ) : FunAstBaseVisitor<InterpretationResult> {
     fun interpretAst(ast: FunAst): InterpretationResult {
@@ -109,7 +109,7 @@ class FunInterpreter(
     ): InterpretationResult {
         if (identifier == PRINTLN_IDENTIFIER) {
             val argsString = args.joinToString(" ") { it.toString() }
-            outputStream.println(argsString)
+            printStream.println(argsString)
             return InterpretationResult(DEFAULT_RESULT, false)
         }
         throw FunInterpretationException("Unknown built-in function " + identifier.name + ".")

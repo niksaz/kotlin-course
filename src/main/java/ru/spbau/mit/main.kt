@@ -9,6 +9,7 @@ import ru.spbau.mit.interpreter.FunInterpreter
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 import ru.spbau.mit.parser.FunParsingException
+import java.io.PrintStream
 
 fun buildAstFor(sourceCodePath: String): FunAst {
     val funLexer = FunLexer(CharStreams.fromFileName(sourceCodePath))
@@ -21,15 +22,21 @@ fun buildAstFor(sourceCodePath: String): FunAst {
     return FunAstBuilder().buildAstFromContext(fileContext)
 }
 
+fun interpretSourceFile(
+    sourceCodePath: String, printStream: PrintStream = System.out
+): FunInterpreter.InterpretationResult {
+    val funAst = buildAstFor(sourceCodePath)
+    val funInterpreter = FunInterpreter(printStream)
+    return funInterpreter.interpretAst(funAst)
+}
+
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Pass the path to a Fun source file.")
         return
     }
     try {
-        val funAst = buildAstFor(args[0])
-        val funInterpreter = FunInterpreter()
-        funInterpreter.interpretAst(funAst)
+        interpretSourceFile(args[0])
     } catch (e: FunParsingException) {
         System.err.println("The code will not be interpreted since parsing errors were met.")
     } catch (e: FunInterpretationException) {

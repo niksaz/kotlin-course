@@ -31,7 +31,7 @@ class FunParserTest {
     }
 
     companion object {
-        private fun getFunAstFrom(sourceFilePath: String): FunAst {
+        fun getFunAstFrom(sourceFilePath: String): FunAst {
             val funLexer = FunLexer(CharStreams.fromFileName(sourceFilePath))
             val tokens = CommonTokenStream(funLexer)
             val parser = FunParser(tokens)
