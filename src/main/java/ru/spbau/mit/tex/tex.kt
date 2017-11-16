@@ -4,12 +4,20 @@ package ru.spbau.mit.tex
 annotation class TexElementMarker
 
 @TexElementMarker
-abstract class Element(val name: String) {
+abstract class Element {
     private val options = hashMapOf<String, String>()
 
-    abstract fun render(builder: StringBuilder, indent: String = "")
+    abstract fun render(builder: StringBuilder)
 
     protected fun buildOptions(): List<String> = options.map { it.key + "=" + it.value }
+
+    protected fun StringBuilder.appendOptions() {
+        val parts = buildOptions()
+        if (parts.isNotEmpty()) {
+            append(parts.joinToString(",", "[", "]"))
+        }
+        append('\n')
+    }
 
     operator fun Pair<String, String>.unaryPlus() {
         options.put(first, second)
@@ -22,31 +30,76 @@ abstract class Element(val name: String) {
     }
 }
 
-abstract class Tag(name: String) : Element(name) {
-    private val children = arrayListOf<Element>()
+class TextElement(private val text: String) : Element() {
+    override fun render(builder: StringBuilder) {
+        builder.append("$text\n")
+    }
+}
 
-    protected fun <T : Element> initTag(tag: T, init: T.() -> Unit = {}): T {
+abstract class Tag(private val name: String) : Element() {
+    val children = arrayListOf<Element>()
+
+    protected fun <T : Element> initTag(tag: T, init: T.() -> Unit): T {
         tag.init()
         children.add(tag)
         return tag
     }
 
-    override fun render(builder: StringBuilder, indent: String) {
-        builder.append("$indent\\begin{$name}\n")
+    override fun render(builder: StringBuilder) {
+        builder.append("\\begin{$name}")
+        builder.appendOptions()
         for (child in children) {
-            child.render(builder, indent + "  ")
+            child.render(builder)
         }
-        builder.append("$indent\\end{$name}\n")
+        builder.append("\\end{$name}\n")
+    }
+}
+
+abstract class TagWithItems(name: String) : Tag(name) {
+    fun item(init: Item.() -> Unit) = initTag(Item(), init)
+}
+
+class Itemize : TagWithItems("itemize")
+
+class Enumerate : TagWithItems("enumerate")
+
+abstract class TagWithContent(name: String) : Tag(name) {
+    operator fun String.unaryPlus() {
+        children.add(TextElement(this))
+    }
+
+    fun frame(frameTitle: String, init: Frame.() -> Unit) = initTag(Frame(frameTitle), init)
+
+    fun itemize(init: Itemize.() -> Unit) = initTag(Itemize(), init)
+
+    fun enumerate(init: Enumerate.() -> Unit) = initTag(Enumerate(), init)
+}
+
+class Frame(frameTitle: String) : TagWithContent("frame") {
+    init {
+        children.add(FrameTitle(frameTitle))
+    }
+}
+
+class FrameTitle(title: String) : Command("frametitle", title, emptyArray())
+
+class Item : TagWithContent("item") {
+    override fun render(builder: StringBuilder) {
+        builder.append("\\item")
+        builder.appendOptions()
+        for (child in children) {
+            child.render(builder)
+        }
     }
 }
 
 abstract class Command(
-    name: String,
+    private val name: String,
     private val mainArg: String,
     private val additionalArgs: Array<out String>
-) : Element(name) {
-    override fun render(builder: StringBuilder, indent: String) {
-        builder.append("$indent\\$name")
+) : Element() {
+    override fun render(builder: StringBuilder) {
+        builder.append("\\$name")
         val parts = mutableListOf<String>()
         parts.addAll(additionalArgs)
         parts.addAll(buildOptions())
@@ -67,7 +120,7 @@ class DocumentClass(
     additionalArgs: Array<out String>
 ) : Command("documentclass", mainArg, additionalArgs)
 
-class Document : Tag("document") {
+class Document : TagWithContent("document") {
     private val usePackages = mutableListOf<UsePackage>()
 
     var documentClass: DocumentClass? = null
@@ -75,12 +128,10 @@ class Document : Tag("document") {
             field = value
         }
 
-    override fun render(builder: StringBuilder, indent: String) {
-        documentClass!!.render(builder, indent)
-        usePackages.forEach {
-            it.render(builder, indent)
-        }
-        super.render(builder, indent)
+    override fun render(builder: StringBuilder) {
+        documentClass!!.render(builder)
+        usePackages.forEach { it.render(builder) }
+        super.render(builder)
     }
 
     fun usePackage(
@@ -106,7 +157,7 @@ class Document : Tag("document") {
     }
 }
 
-fun document(init: Document.() -> Unit = {}): Document {
+fun document(init: Document.() -> Unit): Document {
     val document = Document()
     document.init()
     if (document.documentClass == null) {
