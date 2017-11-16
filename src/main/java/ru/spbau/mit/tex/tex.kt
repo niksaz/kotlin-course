@@ -56,16 +56,40 @@ abstract class Tag(private val name: String) : Element() {
 }
 
 abstract class TagWithItems(name: String) : Tag(name) {
-    fun item(init: Item.() -> Unit) = initTag(Item(), init)
+    fun item(init: Item.() -> Unit) = initTag(Item("item"), init)
 }
 
 class Itemize : TagWithItems("itemize")
 
 class Enumerate : TagWithItems("enumerate")
 
+class Alignment : Tag("alignment") {
+    fun left(init: Item.() -> Unit) = initTag(Item("left"), init)
+
+    fun right(init: Item.() -> Unit) = initTag(Item("right"), init)
+
+    fun center(init: Item.() -> Unit) = initTag(Item("center"), init)
+}
+
+class Item(private val name: String) : TagWithContent(name) {
+    override fun render(builder: StringBuilder) {
+        builder.append("\\$name")
+        builder.appendOptions()
+        for (child in children) {
+            child.render(builder)
+        }
+    }
+}
+
 abstract class TagWithContent(name: String) : Tag(name) {
     operator fun String.unaryPlus() {
         children.add(TextElement(this))
+    }
+
+    fun alignment(init: Alignment.() -> Unit) = initTag(Alignment(), init)
+
+    fun math(formula: String) {
+        children.add(Math(formula))
     }
 
     fun frame(frameTitle: String, init: Frame.() -> Unit) = initTag(Frame(frameTitle), init)
@@ -75,6 +99,8 @@ abstract class TagWithContent(name: String) : Tag(name) {
     fun enumerate(init: Enumerate.() -> Unit) = initTag(Enumerate(), init)
 }
 
+class Math(formula: String) : Command("math", formula, emptyArray())
+
 class Frame(frameTitle: String) : TagWithContent("frame") {
     init {
         children.add(FrameTitle(frameTitle))
@@ -82,16 +108,6 @@ class Frame(frameTitle: String) : TagWithContent("frame") {
 }
 
 class FrameTitle(title: String) : Command("frametitle", title, emptyArray())
-
-class Item : TagWithContent("item") {
-    override fun render(builder: StringBuilder) {
-        builder.append("\\item")
-        builder.appendOptions()
-        for (child in children) {
-            child.render(builder)
-        }
-    }
-}
 
 abstract class Command(
     private val name: String,
@@ -109,16 +125,6 @@ abstract class Command(
         builder.append("{$mainArg}\n")
     }
 }
-
-class UsePackage(
-    mainArg: String,
-    additionalArgs: Array<out String>
-) : Command("usepackage", mainArg, additionalArgs)
-
-class DocumentClass(
-    mainArg: String,
-    additionalArgs: Array<out String>
-) : Command("documentclass", mainArg, additionalArgs)
 
 class Document : TagWithContent("document") {
     private val usePackages = mutableListOf<UsePackage>()
@@ -156,6 +162,16 @@ class Document : TagWithContent("document") {
         this.documentClass = documentClass
     }
 }
+
+class UsePackage(
+    mainArg: String,
+    additionalArgs: Array<out String>
+) : Command("usepackage", mainArg, additionalArgs)
+
+class DocumentClass(
+    mainArg: String,
+    additionalArgs: Array<out String>
+) : Command("documentclass", mainArg, additionalArgs)
 
 fun document(init: Document.() -> Unit): Document {
     val document = Document()

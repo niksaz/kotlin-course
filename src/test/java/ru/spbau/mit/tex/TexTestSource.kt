@@ -118,4 +118,53 @@ class TexTestSource {
             |\end{document}
             |""".trimMargin())
     }
+
+    @Test
+    fun testMath() {
+        val doc =
+            document {
+                documentClass("beamer")
+                math("x+10")
+                math("\\sum_{i=1}^{10}i^3?")
+            }
+        assertThat(doc.toString()).isEqualTo("""
+            |\documentclass{beamer}
+            |\begin{document}
+            |\math{x+10}
+            |\math{\sum_{i=1}^{10}i^3?}
+            |\end{document}
+            |""".trimMargin())
+    }
+
+    @Test
+    fun testAlignment() {
+        val doc =
+            document {
+                documentClass("amsart")
+                alignment {
+                    center {
+                        +"What is the right answer?"
+                    }
+                    left {
+                        math("x=10")
+                    }
+                    right {
+                        math("x=17")
+                    }
+                }
+            }
+        assertThat(doc.toString()).isEqualTo("""
+            |\documentclass{amsart}
+            |\begin{document}
+            |\begin{alignment}
+            |\center
+            |What is the right answer?
+            |\left
+            |\math{x=10}
+            |\right
+            |\math{x=17}
+            |\end{alignment}
+            |\end{document}
+            |""".trimMargin())
+    }
 }
