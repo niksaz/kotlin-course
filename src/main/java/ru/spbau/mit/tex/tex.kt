@@ -59,9 +59,63 @@ abstract class TagWithItems(name: String) : Tag(name) {
     fun item(init: Item.() -> Unit) = initTag(Item("item"), init)
 }
 
+abstract class Command(
+    private val name: String,
+    private val mainArg: String,
+    private val additionalArgs: Array<out String>
+) : Element() {
+    override fun render(builder: StringBuilder) {
+        builder.append("\\$name")
+        val parts = mutableListOf<String>()
+        parts.addAll(additionalArgs)
+        parts.addAll(buildOptions())
+        if (parts.isNotEmpty()) {
+            builder.append(parts.joinToString(",", "[", "]"))
+        }
+        builder.append("{$mainArg}\n")
+    }
+}
+
+class Math(
+    formula: String,
+    additionalArgs: Array<out String>
+) : Command("math", formula, additionalArgs)
+
+class FrameTitle(title: String) : Command("frametitle", title, emptyArray())
+
+class UsePackage(
+    mainArg: String,
+    additionalArgs: Array<out String>
+) : Command("usepackage", mainArg, additionalArgs)
+
+class DocumentClass(
+    mainArg: String,
+    additionalArgs: Array<out String>
+) : Command("documentclass", mainArg, additionalArgs)
+
 class Itemize : TagWithItems("itemize")
 
 class Enumerate : TagWithItems("enumerate")
+
+abstract class TagWithContent(name: String) : Tag(name) {
+    operator fun String.unaryPlus() {
+        children.add(TextElement(this))
+    }
+
+    fun math(formula: String, vararg additionalArgs: String) {
+        children.add(Math(formula, additionalArgs))
+    }
+
+    fun alignment(init: Alignment.() -> Unit) = initTag(Alignment(), init)
+
+    fun frame(frameTitle: String, init: Frame.() -> Unit) = initTag(Frame(frameTitle), init)
+
+    fun customTag(name: String, init: CustomTag.() -> Unit) = initTag(CustomTag(name), init)
+
+    fun itemize(init: Itemize.() -> Unit) = initTag(Itemize(), init)
+
+    fun enumerate(init: Enumerate.() -> Unit) = initTag(Enumerate(), init)
+}
 
 class Alignment : Tag("alignment") {
     fun left(init: Item.() -> Unit) = initTag(Item("left"), init)
@@ -81,50 +135,13 @@ class Item(private val name: String) : TagWithContent(name) {
     }
 }
 
-abstract class TagWithContent(name: String) : Tag(name) {
-    operator fun String.unaryPlus() {
-        children.add(TextElement(this))
-    }
-
-    fun alignment(init: Alignment.() -> Unit) = initTag(Alignment(), init)
-
-    fun math(formula: String) {
-        children.add(Math(formula))
-    }
-
-    fun frame(frameTitle: String, init: Frame.() -> Unit) = initTag(Frame(frameTitle), init)
-
-    fun itemize(init: Itemize.() -> Unit) = initTag(Itemize(), init)
-
-    fun enumerate(init: Enumerate.() -> Unit) = initTag(Enumerate(), init)
-}
-
-class Math(formula: String) : Command("math", formula, emptyArray())
-
 class Frame(frameTitle: String) : TagWithContent("frame") {
     init {
         children.add(FrameTitle(frameTitle))
     }
 }
 
-class FrameTitle(title: String) : Command("frametitle", title, emptyArray())
-
-abstract class Command(
-    private val name: String,
-    private val mainArg: String,
-    private val additionalArgs: Array<out String>
-) : Element() {
-    override fun render(builder: StringBuilder) {
-        builder.append("\\$name")
-        val parts = mutableListOf<String>()
-        parts.addAll(additionalArgs)
-        parts.addAll(buildOptions())
-        if (parts.isNotEmpty()) {
-            builder.append(parts.joinToString(",", "[", "]"))
-        }
-        builder.append("{$mainArg}\n")
-    }
-}
+class CustomTag(name: String) : TagWithContent(name)
 
 class Document : TagWithContent("document") {
     private val usePackages = mutableListOf<UsePackage>()
@@ -162,16 +179,6 @@ class Document : TagWithContent("document") {
         this.documentClass = documentClass
     }
 }
-
-class UsePackage(
-    mainArg: String,
-    additionalArgs: Array<out String>
-) : Command("usepackage", mainArg, additionalArgs)
-
-class DocumentClass(
-    mainArg: String,
-    additionalArgs: Array<out String>
-) : Command("documentclass", mainArg, additionalArgs)
 
 fun document(init: Document.() -> Unit): Document {
     val document = Document()

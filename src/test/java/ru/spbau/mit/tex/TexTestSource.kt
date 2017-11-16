@@ -27,6 +27,22 @@ class TexTestSource {
             |""".trimMargin())
     }
 
+    @Test(expected = DocumentClassException::class)
+    fun testNoDocumentClass() {
+        document {
+            usePackage("babel", "russian", "english")
+        }
+    }
+
+    @Test(expected = DocumentClassException::class)
+    fun testTwoDocumentClasses() {
+        document {
+            documentClass("beamer")
+            usePackage("babel", "russian", "english")
+            documentClass("amsart")
+        }
+    }
+
     @Test
     fun testItemize() {
         val doc =
@@ -164,6 +180,55 @@ class TexTestSource {
             |\right
             |\math{x=17}
             |\end{alignment}
+            |\end{document}
+            |""".trimMargin())
+    }
+
+    @Test
+    fun testComplexDocument() {
+        val rows = listOf(
+            "Love the discipline you know, and let it support you.",
+            "Entrust everything willingly to the gods, and then make your way through life-",
+            "no one’s master and no one’s slave.")
+        val doc =
+            document {
+                documentClass("beamer")
+                usePackage("babel", "russian")
+                frame(frameTitle = "frametitle") {
+                    +("arg1" to "arg2")
+                    itemize {
+                        for (row in rows) {
+                            item { +row }
+                        }
+                    }
+                }
+                customTag(name = "pyglist") {
+                    +("language" to "kotlin")
+                    +"""
+                     |val a = 1
+                     |println(a)
+                     """.trimMargin()
+                }
+            }
+        assertThat(doc.toString()).isEqualTo("""
+            |\documentclass{beamer}
+            |\usepackage[russian]{babel}
+            |\begin{document}
+            |\begin{frame}[arg1=arg2]
+            |\frametitle{frametitle}
+            |\begin{itemize}
+            |\item
+            |Love the discipline you know, and let it support you.
+            |\item
+            |Entrust everything willingly to the gods, and then make your way through life-
+            |\item
+            |no one’s master and no one’s slave.
+            |\end{itemize}
+            |\end{frame}
+            |\begin{pyglist}[language=kotlin]
+            |val a = 1
+            |println(a)
+            |\end{pyglist}
             |\end{document}
             |""".trimMargin())
     }
