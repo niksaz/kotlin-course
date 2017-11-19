@@ -9,14 +9,15 @@ class TestSource {
         val nodeCount = 7
         val universityPairs = 2
         val hasUniversityIndexes = booleanArrayOf(true, true, false, false, true, true, false)
-        val nodes = (0 until nodeCount).map { Node(it, hasUniversityIndexes[it]) }
-        addEdge(nodes, 0, 2)
-        addEdge(nodes, 2, 1)
-        addEdge(nodes, 3, 4)
-        addEdge(nodes, 2, 6)
-        addEdge(nodes, 3, 2)
-        addEdge(nodes, 3, 5)
-        val sum = findMinDistancesSum(Treelandia(nodes, universityPairs))
+        val neighbourIndexes = Array<MutableList<Int>>(nodeCount) { mutableListOf() }
+        addEdge(neighbourIndexes, 0, 2)
+        addEdge(neighbourIndexes, 2, 1)
+        addEdge(neighbourIndexes, 3, 4)
+        addEdge(neighbourIndexes, 2, 6)
+        addEdge(neighbourIndexes, 3, 2)
+        addEdge(neighbourIndexes, 3, 5)
+        val nodes = List(nodeCount) { Node(it, hasUniversityIndexes[it], neighbourIndexes[it]) }
+        val sum = Treelandia(nodes, universityPairs).computeMinSumDistances()
         assertEquals(6L, sum)
     }
 
@@ -27,21 +28,22 @@ class TestSource {
         val hasUniversityIndexes = booleanArrayOf(
             true, true, true, false, true, true, false, false, true
         )
-        val nodes = (0 until nodeCount).map { Node(it, hasUniversityIndexes[it]) }
-        addEdge(nodes, 7, 8)
-        addEdge(nodes, 2, 1)
-        addEdge(nodes, 1, 6)
-        addEdge(nodes, 2, 3)
-        addEdge(nodes, 6, 5)
-        addEdge(nodes, 3, 4)
-        addEdge(nodes, 1, 0)
-        addEdge(nodes, 1, 7)
-        val sum = findMinDistancesSum(Treelandia(nodes, universityPairs))
+        val neighbourIndexes = Array<MutableList<Int>>(nodeCount) { mutableListOf() }
+        addEdge(neighbourIndexes, 7, 8)
+        addEdge(neighbourIndexes, 2, 1)
+        addEdge(neighbourIndexes, 1, 6)
+        addEdge(neighbourIndexes, 2, 3)
+        addEdge(neighbourIndexes, 6, 5)
+        addEdge(neighbourIndexes, 3, 4)
+        addEdge(neighbourIndexes, 1, 0)
+        addEdge(neighbourIndexes, 1, 7)
+        val nodes = List(nodeCount) { Node(it, hasUniversityIndexes[it], neighbourIndexes[it]) }
+        val sum = Treelandia(nodes, universityPairs).computeMinSumDistances()
         assertEquals(9L, sum)
     }
 
-    private fun addEdge(graph: List<Node>, edgeA: Int, edgeB: Int) {
-        graph[edgeA].edges.add(graph[edgeB])
-        graph[edgeB].edges.add(graph[edgeA])
+    private fun addEdge(graph: Array<MutableList<Int>>, edgeA: Int, edgeB: Int) {
+        graph[edgeA].add(edgeB)
+        graph[edgeB].add(edgeA)
     }
 }
