@@ -6,10 +6,10 @@ import kotlin.test.assertEquals
 class TestSource {
     @Test
     fun exampleTest1() {
-        val vertexNumber = 7
+        val nodeCount = 7
         val universityPairs = 2
         val hasUniversityIndexes = booleanArrayOf(true, true, false, false, true, true, false)
-        val nodes = (0 until vertexNumber).map { Node(it, hasUniversityIndexes[it]) }
+        val nodes = (0 until nodeCount).map { Node(it, hasUniversityIndexes[it]) }
         addEdge(nodes, 0, 2)
         addEdge(nodes, 2, 1)
         addEdge(nodes, 3, 4)
@@ -22,12 +22,12 @@ class TestSource {
 
     @Test
     fun exampleTest2() {
-        val vertexNumber = 9
+        val nodeCount = 9
         val universityPairs = 3
         val hasUniversityIndexes = booleanArrayOf(
             true, true, true, false, true, true, false, false, true
         )
-        val nodes = (0 until vertexNumber).map { Node(it, hasUniversityIndexes[it]) }
+        val nodes = (0 until nodeCount).map { Node(it, hasUniversityIndexes[it]) }
         addEdge(nodes, 7, 8)
         addEdge(nodes, 2, 1)
         addEdge(nodes, 1, 6)

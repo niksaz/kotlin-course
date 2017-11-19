@@ -18,7 +18,7 @@ class BufferedScanner(stream: InputStream) {
 }
 
 data class Treelandia(val nodes: List<Node>, val universityPairs: Int) {
-    val vertexes: Int
+    val nodeCount: Int
         get() = nodes.size
 }
 
@@ -29,15 +29,15 @@ data class Node(
 )
 
 fun readTreelandia(scanner: BufferedScanner): Treelandia {
-    val vertexNumber = scanner.nextInt()
+    val nodeCount = scanner.nextInt()
     val universityPairs = scanner.nextInt()
-    val hasUniversityIndexes = BooleanArray(vertexNumber)
+    val hasUniversityIndexes = BooleanArray(nodeCount)
     repeat(2 * universityPairs) {
         val universityIndex = scanner.nextInt() - 1
         hasUniversityIndexes[universityIndex] = true
     }
-    val nodes = (0 until vertexNumber).map { Node(it, hasUniversityIndexes[it]) }
-    repeat(vertexNumber - 1) {
+    val nodes = (0 until nodeCount).map { Node(it, hasUniversityIndexes[it]) }
+    repeat(nodeCount - 1) {
         val edgeA = scanner.nextInt() - 1
         val edgeB = scanner.nextInt() - 1
         nodes[edgeA].edges.add(nodes[edgeB])
@@ -57,7 +57,7 @@ fun computeSubtreeUniversities(subtreeUniversities: IntArray, node: Node, parent
             .sum()
 }
 
-fun findOptimalVertex(
+fun findOptimalNode(
     subtreeUniversities: IntArray,
     universityPairs: Int,
     node: Node,
@@ -68,7 +68,7 @@ fun findOptimalVertex(
         .map { it to subtreeUniversities[it.index] }
         .maxBy { it.second }!!
     return if (maxSubtreeChild.second <= universityPairs) node else {
-        findOptimalVertex(subtreeUniversities, universityPairs, maxSubtreeChild.first, node)
+        findOptimalNode(subtreeUniversities, universityPairs, maxSubtreeChild.first, node)
     }
 }
 
@@ -81,11 +81,11 @@ fun findDistancesToUniversities(node: Node, parent: Node = node, distanceToRoot:
 }
 
 fun findMinDistancesSum(treelandia: Treelandia): Long {
-    val subtreeUniversities = IntArray(treelandia.vertexes)
+    val subtreeUniversities = IntArray(treelandia.nodeCount)
     computeSubtreeUniversities(subtreeUniversities, treelandia.nodes[0])
-    val optimalVertex =
-        findOptimalVertex(subtreeUniversities, treelandia.universityPairs, treelandia.nodes[0])
-    return findDistancesToUniversities(optimalVertex)
+    val optimalNode =
+        findOptimalNode(subtreeUniversities, treelandia.universityPairs, treelandia.nodes[0])
+    return findDistancesToUniversities(optimalNode)
 }
 
 fun main(args: Array<String>) {
