@@ -1,21 +1,6 @@
 package ru.spbau.mit
 
-import java.io.*
 import java.util.*
-
-class BufferedScanner(stream: InputStream) {
-    private val reader: BufferedReader = BufferedReader(InputStreamReader(stream), 32768)
-    private var tokenizer: StringTokenizer? = null
-
-    private fun next(): String {
-        while (tokenizer == null || !tokenizer!!.hasMoreTokens()) {
-            tokenizer = StringTokenizer(reader.readLine())
-        }
-        return tokenizer!!.nextToken()
-    }
-
-    fun nextInt() = Integer.parseInt(next())
-}
 
 data class Treelandia(val nodes: List<Node>, val universityPairs: Int) {
     val nodeCount: Int
@@ -28,7 +13,7 @@ data class Node(
     val edges: MutableList<Node> = mutableListOf()
 )
 
-fun readTreelandia(scanner: BufferedScanner): Treelandia {
+fun readTreelandia(scanner: Scanner): Treelandia {
     val nodeCount = scanner.nextInt()
     val universityPairs = scanner.nextInt()
     val hasUniversityIndexes = BooleanArray(nodeCount)
@@ -89,7 +74,7 @@ fun findMinDistancesSum(treelandia: Treelandia): Long {
 }
 
 fun main(args: Array<String>) {
-    val scanner = BufferedScanner(System.`in`)
+    val scanner = Scanner(System.`in`)
     val minDistancesSum = findMinDistancesSum(readTreelandia(scanner))
     println(minDistancesSum)
 }
