@@ -6,37 +6,18 @@ import ru.spbau.mit.parser.FunBaseVisitor
 import ru.spbau.mit.parser.FunParser
 
 /** Builds [FunAst] from [org.antlr.v4.runtime.tree.ParseTree]. */
-class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
+class AntlrFunAstBuilder : FunBaseVisitor<FunAst.Node>() {
     fun buildAstFromContext(ctx: ParserRuleContext): FunAst {
         val rootNode = visit(ctx)
         return FunAst(rootNode)
     }
 
-    override fun visitFile(ctx: FunParser.FileContext): FunAst.Node {
-        return FunAst.File(visitBlock(ctx.block()) as FunAst.Block)
-    }
+    override fun visitFile(ctx: FunParser.FileContext): FunAst.Node =
+        FunAst.File(visitBlock(ctx.block()) as FunAst.Block)
 
     override fun visitBlock(ctx: FunParser.BlockContext): FunAst.Node {
         val statements = ctx.statement().map { visit(it) as FunAst.Statement }
         return FunAst.Block(statements.toList())
-    }
-
-    override fun visitBlockWithBraces(ctx: FunParser.BlockWithBracesContext): FunAst.Node {
-        return visit(ctx.block())
-    }
-
-    override fun visitStatement(ctx: FunParser.StatementContext): FunAst.Node {
-        val possibleStatements = listOf<ParseTree?>(
-            ctx.assignment(),
-            ctx.expression(),
-            ctx.function(),
-            ctx.ifStatement(),
-            ctx.returnStatement(),
-            ctx.variable(),
-            ctx.whileBlock()
-        )
-        val statement = possibleStatements.find { it != null }
-        return visit(statement!!)
     }
 
     override fun visitFunction(ctx: FunParser.FunctionContext): FunAst.Node {
@@ -49,17 +30,13 @@ class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
     override fun visitVariable(ctx: FunParser.VariableContext): FunAst.Node {
         val identifier = FunAst.Identifier(ctx.IDENTIFIER().text)
         val possibleExpression = ctx.expression()
-        val expression = if (possibleExpression != null) {
-            visit(possibleExpression) as FunAst.Expression
-        } else {
-            null
-        }
+        val expression = possibleExpression?.let { visit(it) as FunAst.Expression }
         return FunAst.Variable(identifier, expression)
     }
 
     override fun visitParameterNames(ctx: FunParser.ParameterNamesContext): FunAst.Node {
         val identifiers = ctx.IDENTIFIER()
-        val params = identifiers?.map { FunAst.Identifier(it.text) }?.toList() ?: listOf()
+        val params = identifiers?.map { FunAst.Identifier(it.text) }.orEmpty()
         return FunAst.ParameterNames(params)
     }
 
@@ -101,15 +78,6 @@ class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
         return FunAst.Arguments(expressions)
     }
 
-    override fun visitExpression(ctx: FunParser.ExpressionContext): FunAst.Node {
-        val possibleExpressions = listOf<ParseTree?>(
-            ctx.atomicExpression(),
-            ctx.binaryExpression()
-        )
-        val expression = possibleExpressions.find { it != null }
-        return visit(expression!!)
-    }
-
     override fun visitBinaryExpression(ctx: FunParser.BinaryExpressionContext): FunAst.Node {
         val leftExpression = visit(ctx.atomicExpression()) as FunAst.Expression
         val operator = FunAst.Operator.getForSymbol(ctx.op.text)!!
@@ -133,4 +101,7 @@ class FunAstBuilder : FunBaseVisitor<FunAst.Node>() {
         val atomicExpression = otherAtomicExpressions.find { it != null }
         return visit(atomicExpression!!)
     }
+
+    override fun aggregateResult(aggregate: FunAst.Node?, nextResult: FunAst.Node?): FunAst.Node? =
+        aggregate ?: nextResult
 }

@@ -11,13 +11,9 @@ class FunInterpreter(
     private val printStream: PrintStream,
     private val context: FunContext = FunContext(setOf(PRINTLN_IDENTIFIER))
 ) : FunAstBaseVisitor<InterpretationResult> {
-    fun interpretAst(ast: FunAst): InterpretationResult {
-        return visit(ast.rootNode)
-    }
+    fun interpretAst(ast: FunAst): InterpretationResult = visit(ast.rootNode)
 
-    override fun visitFile(file: FunAst.File): InterpretationResult {
-        return visitBlock(file.block)
-    }
+    override fun visitFile(file: FunAst.File): InterpretationResult = visitBlock(file.block)
 
     override fun visitBlock(block: FunAst.Block): InterpretationResult {
         context.enterScope()
@@ -48,9 +44,8 @@ class FunInterpreter(
         return UNIT_INTERPRETATION
     }
 
-    override fun visitParameterNames(parameterNames: FunAst.ParameterNames): InterpretationResult {
-        return UNIT_INTERPRETATION
-    }
+    override fun visitParameterNames(parameterNames: FunAst.ParameterNames): InterpretationResult =
+        UNIT_INTERPRETATION
 
     override fun visitWhileBlock(whileBlock: FunAst.WhileBlock): InterpretationResult {
         while (visit(whileBlock.condition).value!! != 0) {
@@ -62,12 +57,10 @@ class FunInterpreter(
         return UNIT_INTERPRETATION
     }
 
-    override fun visitIfStatement(ifStatement: FunAst.IfStatement): InterpretationResult {
-        return when {
-            visit(ifStatement.condition).value!! != 0 -> visit(ifStatement.body)
-            ifStatement.elseBody != null -> visit(ifStatement.elseBody)
-            else -> UNIT_INTERPRETATION
-        }
+    override fun visitIfStatement(ifStatement: FunAst.IfStatement): InterpretationResult = when {
+        visit(ifStatement.condition).value!! != 0 -> visit(ifStatement.body)
+        ifStatement.elseBody != null -> visit(ifStatement.elseBody)
+        else -> UNIT_INTERPRETATION
     }
 
     override fun visitAssignment(assignment: FunAst.Assignment): InterpretationResult {
@@ -78,30 +71,26 @@ class FunInterpreter(
 
     override fun visitReturnStatement(
         returnStatement: FunAst.ReturnStatement
-    ): InterpretationResult {
-        return InterpretationResult(visit(returnStatement.expression).value, true)
-    }
+    ): InterpretationResult = InterpretationResult(visit(returnStatement.expression).value, true)
 
     override fun visitFunctionCall(functionCall: FunAst.FunctionCall): InterpretationResult {
         val function = context.getFunction(
             functionCall.identifier, functionCall.arguments.expressions.size)
         val args = functionCall.arguments.expressions.map { visit(it).value!! }
-        return if (function != null) {
-            context.enterScope()
-            val paramIterator = function.paramNames.params.listIterator()
-            for (arg in args) {
-                val param = paramIterator.next()
-                context.declareVariable(param, arg)
-            }
-            val interpretedBody = visit(function.body)
-            context.leaveScope()
-            InterpretationResult(
-                if (interpretedBody.shouldReturn) interpretedBody.value!! else DEFAULT_RESULT,
-                false
-            )
-        } else {
-            runBuiltItFunction(functionCall.identifier, args)
+        if (function == null) {
+            return runBuiltItFunction(functionCall.identifier, args)
         }
+        context.enterScope()
+        val params = function.paramNames.params
+        params.zip(args).forEach { (param, arg) ->
+            context.declareVariable(param, arg)
+        }
+        val interpretedBody = visit(function.body)
+        context.leaveScope()
+        return InterpretationResult(
+            if (interpretedBody.shouldReturn) interpretedBody.value!! else DEFAULT_RESULT,
+            false
+        )
     }
 
     private fun runBuiltItFunction(
@@ -115,9 +104,8 @@ class FunInterpreter(
         throw FunInterpretationException("Unknown built-in function " + identifier.name + ".")
     }
 
-    override fun visitArguments(arguments: FunAst.Arguments): InterpretationResult {
-        return UNIT_INTERPRETATION
-    }
+    override fun visitArguments(arguments: FunAst.Arguments): InterpretationResult =
+        UNIT_INTERPRETATION
 
     override fun visitBinaryExpression(
         binaryExpression: FunAst.BinaryExpression
@@ -148,9 +136,8 @@ class FunInterpreter(
         }
     }
 
-    override fun visitIdentifier(identifier: FunAst.Identifier): InterpretationResult {
-        return InterpretationResult(context.getVariable(identifier).first, false)
-    }
+    override fun visitIdentifier(identifier: FunAst.Identifier): InterpretationResult =
+        InterpretationResult(context.getVariable(identifier).first, false)
 
     override fun visitNumber(number: FunAst.Number): InterpretationResult {
         try {
@@ -169,12 +156,8 @@ class FunInterpreter(
         private val DEFAULT_RESULT = 0
         private val PRINTLN_IDENTIFIER = FunAst.Identifier("println")
 
-        private fun boolToInt(bool: Boolean): Int {
-            return if (bool) 1 else 0
-        }
+        private fun boolToInt(bool: Boolean): Int = if (bool) 1 else 0
 
-        private fun intToBool(int: Int): Boolean {
-            return int != 0
-        }
+        private fun intToBool(int: Int): Boolean = int != 0
     }
 }

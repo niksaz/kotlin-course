@@ -19,28 +19,21 @@ class FunContext(
         scopes.removeLast()
     }
 
-    fun declareFunction(function: FunAst.Function) {
-        val scope = scopes.peekLast()
-        val scopeFunctions = scope.functions
-        if (scopeFunctions.contains(function.identifier)) {
-            throw FunInterpretationException(
-                "Function \"" + function.identifier.name + "\" is redefined in the same scope.")
-        }
-        scopeFunctions.put(function.identifier, function)
-    }
-
     /** Returns resolved function or null if the function is built-in. */
     fun getFunction(identifier: FunAst.Identifier, paramsLength: Int): FunAst.Function? {
-        val scopeIterator = scopes.descendingIterator()
-        while (scopeIterator.hasNext()) {
-            val scope = scopeIterator.next()
+        val function = findInScopes { scope ->
             if (scope.functions.containsKey(identifier)) {
                 val function = scope.functions.getValue(identifier)
                 if (function.paramNames.params.size == paramsLength) {
-                    return function
+                    function
+                } else {
+                    null
                 }
+            } else {
+                null
             }
         }
+        function?.let { return it }
         if (builtInFunctionIdentifiers.contains(identifier)) {
             return null
         }
@@ -49,26 +42,48 @@ class FunContext(
                 (if (paramsLength == 1) " param" else " params") + " is not defined.")
     }
 
-    fun declareVariable(variableIdentifier: FunAst.Identifier, value: Int?) {
-        val scope = scopes.peekLast()
-        val scopeVariables = scope.variables
-        if (scopeVariables.contains(variableIdentifier)) {
-            throw FunInterpretationException(
-                "Variable \"" + variableIdentifier.name + "\" is redefined in the same scope.")
-        }
-        scopeVariables.put(variableIdentifier, value)
-    }
-
     fun getVariable(identifier: FunAst.Identifier): Pair<Int?, FunScope> {
-        val scopeIterator = scopes.descendingIterator()
-        while (scopeIterator.hasNext()) {
-            val scope = scopeIterator.next()
+        val variable = findInScopes { scope ->
             if (scope.variables.containsKey(identifier)) {
-                return Pair(scope.variables.getValue(identifier), scope)
+                Pair(scope.variables.getValue(identifier), scope)
+            } else {
+                null
             }
         }
-        throw FunInterpretationException(
-            identifier.name + " variable is not defined.")
+        variable?.let { return it }
+        throw FunInterpretationException(identifier.name + " variable is not defined.")
+    }
+
+    private fun <T> findInScopes(performSearch: (FunContext.FunScope) -> T?): T? {
+        val scopeIterator = scopes.descendingIterator()
+        for (scope in scopeIterator) {
+            val finding = performSearch(scope)
+            finding?.let { return it }
+        }
+        return null
+    }
+
+    fun declareFunction(function: FunAst.Function) {
+        val scope = scopes.peekLast()
+        putIfNotDefined("Function", scope.functions, function.identifier, function)
+    }
+
+    fun declareVariable(variableIdentifier: FunAst.Identifier, value: Int?) {
+        val scope = scopes.peekLast()
+        putIfNotDefined("Variable", scope.variables, variableIdentifier, value)
+    }
+
+    private fun <T> putIfNotDefined(
+        entityName: String,
+        definitions: MutableMap<FunAst.Identifier, T>,
+        identifier: FunAst.Identifier,
+        value: T
+    ) {
+        if (definitions.contains(identifier)) {
+            throw FunInterpretationException(
+                "$entityName \"${identifier.name}\" is redefined in the same scope.")
+        }
+        definitions.put(identifier, value)
     }
 
     fun setVariable(scope: FunScope, identifier: FunAst.Identifier, value: Int) {

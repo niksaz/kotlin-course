@@ -3,7 +3,7 @@ package ru.spbau.mit
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import ru.spbau.mit.ast.FunAst
-import ru.spbau.mit.ast.FunAstBuilder
+import ru.spbau.mit.ast.AntlrFunAstBuilder
 import ru.spbau.mit.interpreter.FunInterpretationException
 import ru.spbau.mit.interpreter.FunInterpreter
 import ru.spbau.mit.parser.FunLexer
@@ -19,7 +19,7 @@ fun buildAstFor(sourceCodePath: String): FunAst {
     if (funParser.numberOfSyntaxErrors > 0) {
         throw FunParsingException()
     }
-    return FunAstBuilder().buildAstFromContext(fileContext)
+    return AntlrFunAstBuilder().buildAstFromContext(fileContext)
 }
 
 fun interpretSourceFile(

@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.Test
 import ru.spbau.mit.ast.ExampleAsts
 import ru.spbau.mit.ast.FunAst
-import ru.spbau.mit.ast.FunAstBuilder
+import ru.spbau.mit.ast.AntlrFunAstBuilder
 import kotlin.test.assertEquals
 
 class FunParserTest {
@@ -35,7 +35,7 @@ class FunParserTest {
             val funLexer = FunLexer(CharStreams.fromFileName(sourceFilePath))
             val tokens = CommonTokenStream(funLexer)
             val parser = FunParser(tokens)
-            return FunAstBuilder().buildAstFromContext(parser.file())
+            return AntlrFunAstBuilder().buildAstFromContext(parser.file())
         }
     }
 }

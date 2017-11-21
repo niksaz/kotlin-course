@@ -8,20 +8,12 @@ data class FunAst(val rootNode: Node) {
         fun <T> accept(visitor: FunAstBaseVisitor<T>): T
     }
 
-    data class File(
-        val block: Block
-    ) : Node {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitFile(this)
-        }
+    data class File(val block: Block) : Node {
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitFile(this)
     }
 
-    data class Block(
-        val statements: List<Statement>
-    ) : Node {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitBlock(this)
-        }
+    data class Block(val statements: List<Statement>) : Node {
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitBlock(this)
     }
 
     interface Statement : Node
@@ -31,35 +23,23 @@ data class FunAst(val rootNode: Node) {
         val paramNames: ParameterNames,
         val body: Block
     ) : Statement {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitFunction(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitFunction(this)
     }
 
     data class Variable(
         val identifier: Identifier,
         val expression: Expression?
     ) : Statement {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitVariable(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitVariable(this)
     }
 
-    data class ParameterNames(
-        val params: List<Identifier>
-    ) : Statement {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitParameterNames(this)
-        }
+    data class ParameterNames(val params: List<Identifier>) : Statement {
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T =
+            visitor.visitParameterNames(this)
     }
 
-    data class WhileBlock(
-        val condition: Expression,
-        val body: Block
-    ) : Statement {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitWhileBlock(this)
-        }
+    data class WhileBlock(val condition: Expression, val body: Block) : Statement {
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitWhileBlock(this)
     }
 
     data class IfStatement(
@@ -67,43 +47,30 @@ data class FunAst(val rootNode: Node) {
         val body: Block,
         val elseBody: Block?
     ) : Statement {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitIfStatement(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitIfStatement(this)
     }
 
     data class Assignment(
         val identifier: Identifier,
         val expression: Expression
     ) : Statement {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitAssignment(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitAssignment(this)
     }
 
-    data class ReturnStatement(
-        val expression: Expression
-    ) : Statement {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitReturnStatement(this)
-        }
+    data class ReturnStatement(val expression: Expression) : Statement {
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T =
+            visitor.visitReturnStatement(this)
     }
 
     data class FunctionCall(
         val identifier: Identifier,
         val arguments: Arguments
     ) : Expression {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitFunctionCall(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitFunctionCall(this)
     }
 
-    data class Arguments(
-        val expressions: List<Expression>
-    ) : Node {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitArguments(this)
-        }
+    data class Arguments(val expressions: List<Expression>) : Node {
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitArguments(this)
     }
 
     interface Expression : Statement
@@ -113,25 +80,20 @@ data class FunAst(val rootNode: Node) {
         val operator: Operator,
         val rightExpression: Expression
     ) : Expression {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitBinaryExpression(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T =
+            visitor.visitBinaryExpression(this)
     }
 
     data class Identifier(
         val name: String
     ) : Expression {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitIdentifier(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitIdentifier(this)
     }
 
     data class Number(
         val literal: String
     ) : Expression {
-        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T {
-            return visitor.visitNumber(this)
-        }
+        override fun <T> accept(visitor: FunAstBaseVisitor<T>): T = visitor.visitNumber(this)
     }
 
     enum class Operator(val symbol: String) {
@@ -150,9 +112,8 @@ data class FunAst(val rootNode: Node) {
         LAND("&&");
 
         companion object {
-            fun getForSymbol(symbol: String): Operator? {
-                return values().firstOrNull { it.symbol == symbol }
-            }
+            fun getForSymbol(symbol: String): Operator? =
+                values().firstOrNull { it.symbol == symbol }
         }
     }
 }
