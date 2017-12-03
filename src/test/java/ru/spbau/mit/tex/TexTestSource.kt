@@ -2,8 +2,35 @@ package ru.spbau.mit.tex
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 
 class TexTestSource {
+    @Test
+    fun testCustomOutputStream() {
+        val byteOutputStream = ByteArrayOutputStream()
+        val printStream = PrintStream(byteOutputStream, true)
+        document {
+            documentClass("beamer")
+            usePackage("babel", "russian", "english")
+            usePackage("hyperref", "hidelinks") {
+                +("colorlinks" to "true")
+                +("linkcolor" to "blue")
+                +("urlcolor" to "blue")
+                +("citecolor" to "blue")
+                +("anchorcolor" to "blue")
+            }
+        }.render(printStream)
+        val correctBytes = """
+            |\documentclass{beamer}
+            |\usepackage[russian,english]{babel}
+            |\usepackage[hidelinks,anchorcolor=blue,urlcolor=blue,colorlinks=true,citecolor=blue,linkcolor=blue]{hyperref}
+            |\begin{document}
+            |\end{document}
+            |""".trimMargin().toByteArray()
+        assertThat(byteOutputStream.toByteArray()).isEqualTo(correctBytes)
+    }
+
     @Test
     fun testDocumentInit() {
         val doc =

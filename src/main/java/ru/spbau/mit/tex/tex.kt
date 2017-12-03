@@ -7,11 +7,11 @@ annotation class TexElementMarker
 abstract class Element {
     private val options = hashMapOf<String, String>()
 
-    abstract fun render(builder: StringBuilder)
+    abstract fun render(appendable: Appendable)
 
     protected fun buildOptions(): List<String> = options.map { it.key + "=" + it.value }
 
-    protected fun StringBuilder.appendOptions() {
+    protected fun Appendable.appendOptions() {
         val parts = buildOptions()
         if (parts.isNotEmpty()) {
             append(parts.joinToString(",", "[", "]"))
@@ -23,16 +23,12 @@ abstract class Element {
         options.put(first, second)
     }
 
-    override fun toString(): String {
-        val builder = StringBuilder()
-        render(builder)
-        return builder.toString()
-    }
+    override fun toString(): String = buildString(this::render)
 }
 
 class TextElement(private val text: String) : Element() {
-    override fun render(builder: StringBuilder) {
-        builder.append("$text\n")
+    override fun render(appendable: Appendable) {
+        appendable.append("$text\n")
     }
 }
 
@@ -45,18 +41,18 @@ abstract class Tag(private val name: String) : Element() {
         return tag
     }
 
-    override fun render(builder: StringBuilder) {
-        builder.append("\\begin{$name}")
-        builder.appendOptions()
+    override fun render(appendable: Appendable) {
+        appendable.append("\\begin{$name}")
+        appendable.appendOptions()
         for (child in children) {
-            child.render(builder)
+            child.render(appendable)
         }
-        builder.append("\\end{$name}\n")
+        appendable.append("\\end{$name}\n")
     }
 }
 
-abstract class TagWithItems(name: String) : Tag(name) {
-    fun item(init: Item.() -> Unit) = initTag(Item("item"), init)
+abstract class ListingTag(name: String) : Tag(name) {
+    fun item(init: ListingItem.() -> Unit) = initTag(ListingItem("item"), init)
 }
 
 abstract class Command(
@@ -64,15 +60,15 @@ abstract class Command(
     private val mainArg: String,
     private val additionalArgs: Array<out String>
 ) : Element() {
-    override fun render(builder: StringBuilder) {
-        builder.append("\\$name")
+    override fun render(appendable: Appendable) {
+        appendable.append("\\$name")
         val parts = mutableListOf<String>()
         parts.addAll(additionalArgs)
         parts.addAll(buildOptions())
         if (parts.isNotEmpty()) {
-            builder.append(parts.joinToString(",", "[", "]"))
+            appendable.append(parts.joinToString(",", "[", "]"))
         }
-        builder.append("{$mainArg}\n")
+        appendable.append("{$mainArg}\n")
     }
 }
 
@@ -93,9 +89,9 @@ class DocumentClass(
     additionalArgs: Array<out String>
 ) : Command("documentclass", mainArg, additionalArgs)
 
-class Itemize : TagWithItems("itemize")
+class Itemize : ListingTag("itemize")
 
-class Enumerate : TagWithItems("enumerate")
+class Enumerate : ListingTag("enumerate")
 
 abstract class TagWithContent(name: String) : Tag(name) {
     operator fun String.unaryPlus() {
@@ -118,19 +114,19 @@ abstract class TagWithContent(name: String) : Tag(name) {
 }
 
 class Alignment : Tag("alignment") {
-    fun left(init: Item.() -> Unit) = initTag(Item("left"), init)
+    fun left(init: ListingItem.() -> Unit) = initTag(ListingItem("left"), init)
 
-    fun right(init: Item.() -> Unit) = initTag(Item("right"), init)
+    fun right(init: ListingItem.() -> Unit) = initTag(ListingItem("right"), init)
 
-    fun center(init: Item.() -> Unit) = initTag(Item("center"), init)
+    fun center(init: ListingItem.() -> Unit) = initTag(ListingItem("center"), init)
 }
 
-class Item(private val name: String) : TagWithContent(name) {
-    override fun render(builder: StringBuilder) {
-        builder.append("\\$name")
-        builder.appendOptions()
+class ListingItem(private val name: String) : TagWithContent(name) {
+    override fun render(appendable: Appendable) {
+        appendable.append("\\$name")
+        appendable.appendOptions()
         for (child in children) {
-            child.render(builder)
+            child.render(appendable)
         }
     }
 }
@@ -151,10 +147,10 @@ class Document : TagWithContent("document") {
             field = value
         }
 
-    override fun render(builder: StringBuilder) {
-        documentClass!!.render(builder)
-        usePackages.forEach { it.render(builder) }
-        super.render(builder)
+    override fun render(appendable: Appendable) {
+        documentClass!!.render(appendable)
+        usePackages.forEach { it.render(appendable) }
+        super.render(appendable)
     }
 
     fun usePackage(
