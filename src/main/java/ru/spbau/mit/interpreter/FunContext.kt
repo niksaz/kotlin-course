@@ -7,8 +7,8 @@ import java.util.*
  * A class for the context in which the interpretation is computed. Represented as a stack of
  * [FunScope]s.
  */
-class FunContext(
-    private val builtInFunctionIdentifiers: Set<FunAst.Identifier> = setOf(),
+data class FunContext(
+    private val builtInFunctionNames: Set<String> = setOf(),
     private val scopes: java.util.ArrayDeque<FunScope> = ArrayDeque()
 ) {
     fun enterScope() {
@@ -22,8 +22,8 @@ class FunContext(
     /** Returns resolved function or null if the function is built-in. */
     fun getFunction(identifier: FunAst.Identifier, paramsLength: Int): FunAst.Function? {
         val function = findInScopes { scope ->
-            if (scope.functions.containsKey(identifier)) {
-                val function = scope.functions.getValue(identifier)
+            if (scope.functions.containsKey(identifier.name)) {
+                val function = scope.functions.getValue(identifier.name)
                 if (function.paramNames.params.size == paramsLength) {
                     function
                 } else {
@@ -34,7 +34,7 @@ class FunContext(
             }
         }
         function?.let { return it }
-        if (builtInFunctionIdentifiers.contains(identifier)) {
+        if (builtInFunctionNames.contains(identifier.name)) {
             return null
         }
         throw FunInterpretationException(
@@ -44,8 +44,8 @@ class FunContext(
 
     fun getVariable(identifier: FunAst.Identifier): Pair<Int?, FunScope> {
         val variable = findInScopes { scope ->
-            if (scope.variables.containsKey(identifier)) {
-                Pair(scope.variables.getValue(identifier), scope)
+            if (scope.variables.containsKey(identifier.name)) {
+                Pair(scope.variables.getValue(identifier.name), scope)
             } else {
                 null
             }
@@ -75,23 +75,23 @@ class FunContext(
 
     private fun <T> putIfNotDefined(
         entityName: String,
-        definitions: MutableMap<FunAst.Identifier, T>,
+        definitions: MutableMap<String, T>,
         identifier: FunAst.Identifier,
         value: T
     ) {
-        if (definitions.contains(identifier)) {
+        if (definitions.contains(identifier.name)) {
             throw FunInterpretationException(
                 "$entityName \"${identifier.name}\" is redefined in the same scope.")
         }
-        definitions.put(identifier, value)
+        definitions.put(identifier.name, value)
     }
 
     fun setVariable(scope: FunScope, identifier: FunAst.Identifier, value: Int) {
-        scope.variables.put(identifier, value)
+        scope.variables.put(identifier.name, value)
     }
 
     data class FunScope(
-        val variables: MutableMap<FunAst.Identifier, Int?> = mutableMapOf(),
-        val functions: MutableMap<FunAst.Identifier, FunAst.Function> = mutableMapOf()
+        val variables: MutableMap<String, Int?> = mutableMapOf(),
+        val functions: MutableMap<String, FunAst.Function> = mutableMapOf()
     )
 }

@@ -32,21 +32,26 @@ class FunInterpreterTest {
     @Test(expected = FunInterpretationException::class)
     fun interpretUndefinedFunction() {
         val ast = FunAst(FunctionCall(
-            Identifier("fib"),
-            Arguments(listOf(Number("5")))
-        ))
+            Identifier("fib", 1),
+            Arguments(listOf(Number("5", 1)), 1),
+            1))
         InterpretationVerifier(UNIT_INTERPRETATION).verifyAstInterpretation(ast)
     }
 
     @Test(expected = FunInterpretationException::class)
     fun interpretOverloadedFunctions() {
         val ast = FunAst(Block(listOf(
-            Function(Identifier("print"), ParameterNames(listOf()), Block(listOf())),
             Function(
-                Identifier("print"),
-                ParameterNames(listOf(Identifier("s"))),
-                Block(listOf())))
-        ))
+                Identifier("print", 1),
+                ParameterNames(listOf(), 1),
+                Block(listOf(), 1),
+                1),
+            Function(
+                Identifier("print", 1),
+                ParameterNames(listOf(Identifier("s", 1)), 1),
+                Block(listOf(), 1),
+                1)),
+            1))
         InterpretationVerifier(UNIT_INTERPRETATION).verifyAstInterpretation(ast)
     }
 }

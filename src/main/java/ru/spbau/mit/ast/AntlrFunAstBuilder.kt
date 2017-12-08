@@ -7,43 +7,40 @@ import ru.spbau.mit.parser.FunParser
 
 /** Builds [FunAst] from [org.antlr.v4.runtime.tree.ParseTree]. */
 class AntlrFunAstBuilder : FunBaseVisitor<FunAst.Node>() {
-    fun buildAstFromContext(ctx: ParserRuleContext): FunAst {
-        val rootNode = visit(ctx)
-        return FunAst(rootNode)
-    }
-
     override fun visitFile(ctx: FunParser.FileContext): FunAst.Node =
-        FunAst.File(visitBlock(ctx.block()) as FunAst.Block)
+        FunAst.File(visitBlock(ctx.block()) as FunAst.Block, ctx.start.line)
 
     override fun visitBlock(ctx: FunParser.BlockContext): FunAst.Node {
         val statements = ctx.statement().map { visit(it) as FunAst.Statement }
-        return FunAst.Block(statements.toList())
+        return FunAst.Block(statements.toList(), ctx.start.line)
     }
 
     override fun visitFunction(ctx: FunParser.FunctionContext): FunAst.Node {
-        val identifier = FunAst.Identifier(ctx.IDENTIFIER().text)
+        val identifierToken = ctx.IDENTIFIER()
+        val identifier = FunAst.Identifier(identifierToken.text, identifierToken.symbol.line)
         val paramNames = visit(ctx.parameterNames()) as FunAst.ParameterNames
         val body = visit(ctx.blockWithBraces()) as FunAst.Block
-        return FunAst.Function(identifier, paramNames, body)
+        return FunAst.Function(identifier, paramNames, body, ctx.start.line)
     }
 
     override fun visitVariable(ctx: FunParser.VariableContext): FunAst.Node {
-        val identifier = FunAst.Identifier(ctx.IDENTIFIER().text)
+        val identifierToken = ctx.IDENTIFIER()
+        val identifier = FunAst.Identifier(identifierToken.text, identifierToken.symbol.line)
         val possibleExpression = ctx.expression()
         val expression = possibleExpression?.let { visit(it) as FunAst.Expression }
-        return FunAst.Variable(identifier, expression)
+        return FunAst.Variable(identifier, expression, identifier.lineNumber)
     }
 
     override fun visitParameterNames(ctx: FunParser.ParameterNamesContext): FunAst.Node {
         val identifiers = ctx.IDENTIFIER()
-        val params = identifiers?.map { FunAst.Identifier(it.text) }.orEmpty()
-        return FunAst.ParameterNames(params)
+        val params = identifiers?.map { FunAst.Identifier(it.text, it.symbol.line) }.orEmpty()
+        return FunAst.ParameterNames(params, ctx.start.line)
     }
 
     override fun visitWhileBlock(ctx: FunParser.WhileBlockContext): FunAst.Node {
         val condition = visit(ctx.expression()) as FunAst.Expression
         val body = visit(ctx.blockWithBraces()) as FunAst.Block
-        return FunAst.WhileBlock(condition, body)
+        return FunAst.WhileBlock(condition, body, ctx.start.line)
     }
 
     override fun visitIfStatement(ctx: FunParser.IfStatementContext): FunAst.Node {
@@ -51,31 +48,33 @@ class AntlrFunAstBuilder : FunBaseVisitor<FunAst.Node>() {
         val blocks = ctx.blockWithBraces().map { visit(it) }
         val body = blocks[0] as FunAst.Block
         val elseBody = blocks.getOrNull(1) as FunAst.Block?
-        return FunAst.IfStatement(condition, body, elseBody)
+        return FunAst.IfStatement(condition, body, elseBody, ctx.start.line)
     }
 
     override fun visitAssignment(ctx: FunParser.AssignmentContext): FunAst.Node {
-        val identifier = FunAst.Identifier(ctx.IDENTIFIER().text)
+        val identifierToken = ctx.IDENTIFIER()
+        val identifier = FunAst.Identifier(identifierToken.text, identifierToken.symbol.line)
         val expression = visit(ctx.expression()) as FunAst.Expression
-        return FunAst.Assignment(identifier, expression)
+        return FunAst.Assignment(identifier, expression, ctx.start.line)
     }
 
     override fun visitReturnStatement(ctx: FunParser.ReturnStatementContext): FunAst.Node {
         val expression = visit(ctx.expression()) as FunAst.Expression
-        return FunAst.ReturnStatement(expression)
+        return FunAst.ReturnStatement(expression, ctx.start.line)
     }
 
     override fun visitFunctionCall(ctx: FunParser.FunctionCallContext): FunAst.Node {
-        val identifier = FunAst.Identifier(ctx.IDENTIFIER().text)
+        val identifierToken = ctx.IDENTIFIER()
+        val identifier = FunAst.Identifier(identifierToken.text, identifierToken.symbol.line)
         val arguments = visit(ctx.arguments()) as FunAst.Arguments
-        return FunAst.FunctionCall(identifier, arguments)
+        return FunAst.FunctionCall(identifier, arguments, ctx.start.line)
     }
 
     override fun visitArguments(ctx: FunParser.ArgumentsContext): FunAst.Node {
         val possibleExpressions = ctx.expression()
         val expressions =
             possibleExpressions?.map { visit(it) as FunAst.Expression }?.toList() ?: listOf()
-        return FunAst.Arguments(expressions)
+        return FunAst.Arguments(expressions, ctx.start.line)
     }
 
     private fun transformExpression(ctx: ParserRuleContext): FunAst.Expression {
@@ -85,7 +84,7 @@ class AntlrFunAstBuilder : FunBaseVisitor<FunAst.Node>() {
             val opParseTree = ctx.children[i++]
             val operator = FunAst.Operator.getForSymbol(opParseTree.text)!!
             val right = visit(ctx.children[i++]) as FunAst.Expression
-            left = FunAst.BinaryExpression(left, operator, right)
+            left = FunAst.BinaryExpression(left, operator, right, left.lineNumber)
         }
         return left
     }
@@ -113,11 +112,11 @@ class AntlrFunAstBuilder : FunBaseVisitor<FunAst.Node>() {
     override fun visitAtomicExpression(ctx: FunParser.AtomicExpressionContext): FunAst.Node {
         val identifier = ctx.IDENTIFIER()
         if (identifier != null) {
-            return FunAst.Identifier(identifier.text)
+            return FunAst.Identifier(identifier.text, identifier.symbol.line)
         }
         val number = ctx.NUMBER()
         if (number != null) {
-            return FunAst.Number(number.text)
+            return FunAst.Number(number.text, number.symbol.line)
         }
         val otherAtomicExpressions = listOf<ParseTree?>(
             ctx.functionCall(),

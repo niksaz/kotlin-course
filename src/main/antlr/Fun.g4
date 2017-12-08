@@ -1,7 +1,7 @@
 grammar Fun;
 
 file
-    : block
+    : block EOF
     ;
 
 block
