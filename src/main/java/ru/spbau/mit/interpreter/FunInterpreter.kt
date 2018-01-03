@@ -9,7 +9,7 @@ import java.io.PrintStream
 /** A visitor for interpreting the [FunAst] nodes. */
 open class FunInterpreter(
     protected val printStream: PrintStream,
-    private val context: FunContext = FunContext(setOf(PRINTLN_FUN_NAME))
+    protected val context: FunContext = FunContext(setOf(PRINTLN_FUN_NAME))
 ) : FunAstBaseVisitor<InterpretationResult> {
     suspend fun interpretAst(ast: FunAst): InterpretationResult = visit(ast.rootNode)
 
