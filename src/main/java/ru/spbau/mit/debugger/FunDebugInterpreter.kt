@@ -1,27 +1,24 @@
 package ru.spbau.mit.debugger
 
 import ru.spbau.mit.ast.FunAst
-import ru.spbau.mit.debugger.FunDebugInterpreterReceiver.ExecutionPauseSnapshot
+import ru.spbau.mit.debugger.FunDebugInterpreterPauseReceiver.ExecutionPauseSnapshot
 import ru.spbau.mit.interpreter.FunInterpreter
 import java.io.PrintStream
 import kotlin.coroutines.experimental.suspendCoroutine
 
 /** A visitor for interpreting the [FunAst] nodes in DEBUG mode. */
 class FunDebugInterpreter(
-    private val receiver: FunDebugInterpreterReceiver,
+    private val pauseReceiver: FunDebugInterpreterPauseReceiver,
     private val breakpointMap: Map<Int, FunAst.Expression?>,
     printStream: PrintStream
 ) : FunInterpreter(printStream) {
-    suspend fun interpretAstDebugMode(ast: FunAst) {
-        val result = visit(ast.rootNode)
-        receiver.interpretationFinishedWith(result)
-    }
+    suspend fun interpretAstDebugMode(ast: FunAst): InterpretationResult = visit(ast.rootNode)
 
     suspend private fun processBreakpointsAt(lineNumber: Int) {
         if (breakpointMap.contains(lineNumber)) {
             val condition = breakpointMap[lineNumber]
             if (condition != null) {
-                val interpreter = FunInterpreter(printStream, context.copy())
+                val interpreter = FunInterpreter(printStream, context.clone())
                 try {
                     val interpretationResult = interpreter.visit(condition)
                     val conditionHolds = intToBool(interpretationResult.value!!)
@@ -34,8 +31,8 @@ class FunDebugInterpreter(
                 }
             }
             suspendCoroutine<Unit> { continuation ->
-                receiver.interpretationPausedWith(
-                    ExecutionPauseSnapshot(lineNumber, context.copy(), continuation))
+                pauseReceiver.interpretationPausedWith(
+                    ExecutionPauseSnapshot(lineNumber, context.clone(), continuation))
             }
         }
     }

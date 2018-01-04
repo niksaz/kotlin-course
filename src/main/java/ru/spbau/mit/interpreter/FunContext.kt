@@ -1,6 +1,7 @@
 package ru.spbau.mit.interpreter
 
 import ru.spbau.mit.ast.FunAst
+import ru.spbau.mit.interpreter.FunContext.FunScope
 import java.util.*
 
 /**
@@ -12,7 +13,7 @@ data class FunContext(
     private val scopes: java.util.ArrayDeque<FunScope> = ArrayDeque()
 ) {
     fun enterScope() {
-        scopes.add(FunContext.FunScope())
+        scopes.addLast(FunScope())
     }
 
     fun leaveScope() {
@@ -89,6 +90,8 @@ data class FunContext(
     fun setVariable(scope: FunScope, identifier: FunAst.Identifier, value: Int) {
         scope.variables.put(identifier.name, value)
     }
+
+    fun clone(): FunContext = FunContext(builtInFunctionNames, scopes.clone())
 
     data class FunScope(
         val variables: MutableMap<String, Int?> = mutableMapOf(),

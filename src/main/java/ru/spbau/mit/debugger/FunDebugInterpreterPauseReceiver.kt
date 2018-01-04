@@ -1,13 +1,10 @@
 package ru.spbau.mit.debugger
 
 import ru.spbau.mit.interpreter.FunContext
-import ru.spbau.mit.interpreter.FunInterpreter
 import kotlin.coroutines.experimental.Continuation
 
-/** Able to receive events from [FunDebugInterpreter]. */
-interface FunDebugInterpreterReceiver {
-    fun interpretationFinishedWith(result: FunInterpreter.InterpretationResult)
-
+/** Able to receive pauses from [FunDebugInterpreter]. */
+interface FunDebugInterpreterPauseReceiver {
     fun interpretationPausedWith(pauseSnapshot: ExecutionPauseSnapshot)
 
     data class ExecutionPauseSnapshot(

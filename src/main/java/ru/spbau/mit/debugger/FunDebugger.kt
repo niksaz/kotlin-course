@@ -2,7 +2,7 @@ package ru.spbau.mit.debugger
 
 import kotlinx.coroutines.experimental.runBlocking
 import ru.spbau.mit.ast.FunAst
-import ru.spbau.mit.debugger.FunDebugInterpreterReceiver.ExecutionPauseSnapshot
+import ru.spbau.mit.debugger.FunDebugInterpreterPauseReceiver.ExecutionPauseSnapshot
 import ru.spbau.mit.interpreter.FunContext
 import ru.spbau.mit.interpreter.FunInterpreter
 import ru.spbau.mit.interpreter.FunInterpreter.InterpretationResult
@@ -14,21 +14,14 @@ import kotlin.coroutines.experimental.*
 class FunDebugger(
     private val debugOut: PrintStream,
     private val programOut: PrintStream = debugOut
-) : FunDebugInterpreterReceiver {
-    private var loadedAst: FunAst? = null
-
+) : FunDebugInterpreterPauseReceiver {
     private val breakpointMap: MutableMap<Int, FunAst.Expression?> = hashMapOf()
 
-    private var pauseSnapshot: ExecutionPauseSnapshot? = null
-    private var result: InterpretationResult? = null
-
-    override fun interpretationFinishedWith(result: InterpretationResult) {
-        this.result = result
-        pauseSnapshot = null
-    }
+    private var loadedAst: FunAst? = null
+    private var interpreterState: InterpreterState? = null
 
     override fun interpretationPausedWith(pauseSnapshot: ExecutionPauseSnapshot) {
-        this.pauseSnapshot = pauseSnapshot
+        interpreterState = PausedState(pauseSnapshot)
     }
 
     fun load(filename: String) {
@@ -59,21 +52,24 @@ class FunDebugger(
 
     fun run() {
         requireAstLoaded()
-        requireProgramNonRunning()
+        requireProgramRunning(false)
         val debugInterpreter = FunDebugInterpreter(this, breakpointMap, programOut)
-        pauseSnapshot = ExecutionPauseSnapshot(
+        interpreterState = PausedState(ExecutionPauseSnapshot(
             0, FunContext(), createInitialContinuation {
                 debugInterpreter.interpretAstDebugMode(loadedAst!!)
-            })
+            }))
         continueExecution()
     }
 
-    private fun createInitialContinuation(startLambda: suspend () -> Unit): Continuation<Unit> =
-        startLambda.createCoroutine(object : Continuation<Unit> {
+    private fun createInitialContinuation(
+        startLambda: suspend () -> InterpretationResult
+    ): Continuation<Unit> =
+        startLambda.createCoroutine(object : Continuation<InterpretationResult> {
             override val context: CoroutineContext
                 get() = EmptyCoroutineContext
 
-            override fun resume(value: Unit) {
+            override fun resume(value: InterpretationResult) {
+                interpreterState = FinishedState(value)
             }
 
             override fun resumeWithException(exception: Throwable) {
@@ -82,37 +78,45 @@ class FunDebugger(
 
     fun stop() {
         requireAstLoaded()
-        requireProgramRunning()
-        pauseSnapshot = null
+        requireProgramRunning(true)
+        interpreterState = null
         debugOut.println("Stopped execution.")
     }
 
     fun evaluate(exprText: String) {
         requireAstLoaded()
-        requireProgramRunning()
+        requireProgramRunning(true)
         val expr = buildExprFrom(exprText)
         val exprResult = runBlocking {
-            FunInterpreter(debugOut, pauseSnapshot!!.executionContext.copy()).visit(expr)
+            FunInterpreter(
+                debugOut,
+                (interpreterState!! as PausedState).pauseSnapshot.executionContext.clone())
+            .visit(expr)
         }
         debugOut.println("Result: ${exprResult.value!!}")
     }
 
     fun continueExecution() {
         requireAstLoaded()
-        requireProgramRunning()
-        pauseSnapshot!!.executionContinuation.resume(Unit)
-        if (pauseSnapshot != null) {
-            debugOut.println("Program was paused on line ${pauseSnapshot!!.lineNumber}.")
-        } else {
-            val returnCode = result!!.value
-            debugOut.println(
-                "Program finished with " +
-                    if (returnCode == null) {
-                        "no return value."
-                    }
-                    else {
-                        "return value $returnCode."
-                    })
+        requireProgramRunning(true)
+        (interpreterState!! as PausedState).pauseSnapshot.executionContinuation.resume(Unit)
+        val resumedInterpreterState = interpreterState!!
+        when (resumedInterpreterState) {
+            is PausedState -> {
+                debugOut.println("Program was paused on line " +
+                    "${resumedInterpreterState.pauseSnapshot.lineNumber}.")
+            }
+            is FinishedState -> {
+                val returnCode = resumedInterpreterState.result.value
+                debugOut.println(
+                    "Program finished with " +
+                        if (returnCode == null) {
+                            "no return value."
+                        }
+                        else {
+                            "return value $returnCode."
+                        })
+            }
         }
     }
 
@@ -122,15 +126,17 @@ class FunDebugger(
         }
     }
 
-    private fun requireProgramRunning() {
-        if (pauseSnapshot == null) {
-            throw FunDebugException("No program is running.")
-        }
-    }
-
-    private fun requireProgramNonRunning() {
-        if (pauseSnapshot != null) {
-            throw FunDebugException("Program is already running!")
+    private fun requireProgramRunning(requiredRunning: Boolean) {
+        val isRunning = interpreterState != null && interpreterState is PausedState
+        if (isRunning != requiredRunning) {
+            throw FunDebugException(
+                if (isRunning) "Program is already running!" else "No program is running.")
         }
     }
 }
+
+private sealed class InterpreterState
+
+private data class PausedState(val pauseSnapshot: ExecutionPauseSnapshot) : InterpreterState()
+
+private data class FinishedState(val result: InterpretationResult) : InterpreterState()
